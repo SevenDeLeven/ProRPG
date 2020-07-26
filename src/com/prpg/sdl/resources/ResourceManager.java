@@ -1,41 +1,15 @@
 package com.prpg.sdl.resources;
 
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.GL_RGBA8;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TRUE;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
-import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
-import static org.lwjgl.opengl.GL15.glBufferData;
-import static org.lwjgl.opengl.GL15.glGenBuffers;
-import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
-import static org.lwjgl.opengl.GL20.GL_LINK_STATUS;
-import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
-import static org.lwjgl.opengl.GL20.glAttachShader;
-import static org.lwjgl.opengl.GL20.glCompileShader;
-import static org.lwjgl.opengl.GL20.glCreateProgram;
-import static org.lwjgl.opengl.GL20.glCreateShader;
-import static org.lwjgl.opengl.GL20.glDeleteProgram;
-import static org.lwjgl.opengl.GL20.glDeleteShader;
-import static org.lwjgl.opengl.GL20.glGetProgramInfoLog;
-import static org.lwjgl.opengl.GL20.glGetProgrami;
-import static org.lwjgl.opengl.GL20.glLinkProgram;
-import static org.lwjgl.opengl.GL20.glShaderSource;
-import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
+import static org.lwjgl.opengl.GL33.*;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -145,21 +119,23 @@ public class ResourceManager {
 	}
 	
 	public static int loadShader(int shaderType, String fileName) {
-		byte[] shaderData = null;
-		try (FileInputStream fis = new FileInputStream(CURRENT_WORKING_DIRECTORY + "/assets/shaders/" + fileName)) {
-			shaderData = new byte[fis.available()];
-			fis.read(shaderData);
-			fis.close();
-		} catch (Exception e) {
+		String shaderSource;
+		try {
+			shaderSource = new String(Files.readAllBytes(new File(CURRENT_WORKING_DIRECTORY + "/assets/shaders/" + fileName).toPath())
+					, Charset.forName("UTF-8"));
+
+			int shaderName = glCreateShader(shaderType);
+			glShaderSource(shaderName, shaderSource);
+			glCompileShader(shaderName);
+			
+			System.out.println(glGetShaderInfoLog(shaderName));
+			return shaderName;
+		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Shader file " + fileName + " was unreadable!");
+			System.err.println("File " + fileName + " was unreadable!");
 			System.exit(-1);
+			return -1;
 		}
-		String shaderSource = new String(shaderData, Charset.forName("UTF-8"));
-		int shaderName = glCreateShader(shaderType);
-		glShaderSource(shaderName, shaderSource);
-		glCompileShader(shaderName);
-		return shaderName;
 	}
 
 }

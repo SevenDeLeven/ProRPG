@@ -1,9 +1,6 @@
 #version 330 core
-#extension GL_ARB_explicit_uniform_location : enable
 
-layout(location = 2)
 uniform sampler2D atlas;
-layout(location = 3)
 uniform vec2 atlasSize;
 
 in vec2 f_uv;
