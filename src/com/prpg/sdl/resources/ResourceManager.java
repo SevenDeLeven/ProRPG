@@ -1,21 +1,32 @@
 package com.prpg.sdl.resources;
 
-import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.opengl.GL11.GL_NEAREST;
+import static org.lwjgl.opengl.GL11.GL_RGBA;
+import static org.lwjgl.opengl.GL11.GL_RGBA8;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameteri;
+import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
+import static org.lwjgl.opengl.GL15.glBindBuffer;
+import static org.lwjgl.opengl.GL15.glBufferData;
+import static org.lwjgl.opengl.GL15.glGenBuffers;
+import static org.lwjgl.opengl.GL20.glDeleteProgram;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.joml.Matrix4f;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
+
+import com.prpg.sdl.render.ShaderProgram;
 
 public class ResourceManager {
 	
@@ -58,52 +69,16 @@ public class ResourceManager {
 		return tex;
 	}
 	
-	public static int createShaderProgram(String vertexShaderFileName, String fragmentShaderFileName) {
-		int vertexShader = loadShader(GL_VERTEX_SHADER, vertexShaderFileName);
-		int fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragmentShaderFileName);
-		int program = glCreateProgram();
-		glAttachShader(program, vertexShader);
-		glAttachShader(program, fragmentShader);
-		glLinkProgram(program);
-		
-		int status = glGetProgrami(program, GL_LINK_STATUS);
-		if (status != GL_TRUE) {
-			String log = glGetProgramInfoLog(program);
-			throw new RuntimeException(log);
-		}
-		
-		glDeleteShader(vertexShader);
-		glDeleteShader(fragmentShader);
-		
-		shaderPrograms.add(program);
-		
-		return program;
+	
+	/**
+	 * Registers a shader into the resource manager.
+	 * Used for deleting shaders when cleaning up
+	 * @param program
+	 */
+	public static void registerShader(ShaderProgram program) {
+		shaderPrograms.add(program.getProgram());
 	}
 	
-	public static int createShaderProgram(String geometryShaderFileName, String vertexShaderFileName, String fragmentShaderFileName) {
-		int geometryShader = loadShader(GL_GEOMETRY_SHADER, geometryShaderFileName);
-		int vertexShader = loadShader(GL_VERTEX_SHADER, vertexShaderFileName);
-		int fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragmentShaderFileName);
-		int program = glCreateProgram();
-		glAttachShader(program, geometryShader);
-		glAttachShader(program, vertexShader);
-		glAttachShader(program, fragmentShader);
-		glLinkProgram(program);
-		
-		int status = glGetProgrami(program, GL_LINK_STATUS);
-		if (status != GL_TRUE) {
-			String log = glGetProgramInfoLog(program);
-			throw new RuntimeException(log);
-		}
-
-		glDeleteShader(geometryShader);
-		glDeleteShader(vertexShader);
-		glDeleteShader(fragmentShader);
-		
-		shaderPrograms.add(program);
-		
-		return program;
-	}
 	
 	public static void deleteShaderProgram(int program) {
 		glDeleteProgram(program);
@@ -118,24 +93,6 @@ public class ResourceManager {
 		}
 	}
 	
-	public static int loadShader(int shaderType, String fileName) {
-		String shaderSource;
-		try {
-			shaderSource = new String(Files.readAllBytes(new File(CURRENT_WORKING_DIRECTORY + "/assets/shaders/" + fileName).toPath())
-					, Charset.forName("UTF-8"));
-
-			int shaderName = glCreateShader(shaderType);
-			glShaderSource(shaderName, shaderSource);
-			glCompileShader(shaderName);
-			
-			System.out.println(glGetShaderInfoLog(shaderName));
-			return shaderName;
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("File " + fileName + " was unreadable!");
-			System.exit(-1);
-			return -1;
-		}
-	}
+	
 
 }

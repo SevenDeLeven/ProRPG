@@ -1,6 +1,6 @@
 #version 330 core
 
-uniform vec4 xywh;
+uniform ivec4 xywh;
 uniform mat4 model;
 uniform mat4 projection;
 

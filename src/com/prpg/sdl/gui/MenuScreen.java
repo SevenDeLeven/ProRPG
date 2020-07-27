@@ -4,18 +4,19 @@ import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
-import static org.lwjgl.opengl.GL20.glUniform2f;
-import static org.lwjgl.opengl.GL20.glUseProgram;
+
+import org.joml.Vector2f;
 
 import com.prpg.sdl.render.Renderer;
+import com.prpg.sdl.render.ShaderProgram;
 
 public class MenuScreen extends Screen {
 	
-	private int u_atlasSize = 3;
-	private int u_projection = 4;
+	private ShaderProgram textShader;
 	
 	public MenuScreen() {
-		addElement(new GUIText(-400,0,10,"The quick, brown\nfox 'jumps' over\nthe lazy dog\nyou're"));
+		textShader = Renderer.getTextShader();
+		addElement(new GUIText(-400,0,10,"The quick,brown\nfox 'jumps' over\nthe lazy dog\nyou're"));
 	}
 	
 	@Override
@@ -25,17 +26,14 @@ public class MenuScreen extends Screen {
 			
 		}
 		
-		int textShader = Renderer.getTextShader();
-		glUseProgram(textShader);
-		Renderer.uniformMatrix(u_projection, Renderer.loadProjectionMatrix());
+		textShader.use();
+		textShader.uniformMatrix("projection", Renderer.loadProjectionMatrix());
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, TextAtlas.getTexture());
-		glUniform2f(u_atlasSize, 215, 16);
+		textShader.uniformVec2("atlasSize", new Vector2f(215, 16));
 		for (GUIElement text : elemsByClass.get(GUIText.class)) {
 			text.draw();
 		}
-		
-		
 	}
 
 	@Override

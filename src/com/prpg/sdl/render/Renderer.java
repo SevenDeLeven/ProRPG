@@ -72,8 +72,9 @@ public class Renderer {
 	static int quadVAO;
 	static int quadVBO;
 	
-	private static int basicShaderProgram;
-	private static int textShaderProgram;
+	private static ShaderProgram basicShaderProgram;
+	private static ShaderProgram textShaderProgram;
+	private static ShaderProgram scaleShaderProgram;
 	
 	private static List<Screen> screens = new ArrayList<Screen>();
 	
@@ -138,8 +139,9 @@ public class Renderer {
 		
 		//Load Shaders
 
-		basicShaderProgram = ResourceManager.createShaderProgram("vertShader.vert", "fragShader.frag");
-		textShaderProgram = ResourceManager.createShaderProgram("textShader.vert", "textShader.frag");
+		basicShaderProgram = ShaderProgram.createShaderProgram("vertShader.vert", "fragShader.frag");
+		textShaderProgram = ShaderProgram.createShaderProgram("textShader.vert", "textShader.frag");
+		scaleShaderProgram = ShaderProgram.createShaderProgram("scaleShader.vert", "scaleShader.frag");
 		
 		
 		quadVAO = glGenVertexArrays();
@@ -198,11 +200,11 @@ public class Renderer {
 				screen.draw();
 			}
 			
-			glUseProgram(basicShaderProgram);
+			basicShaderProgram.use();
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, TextAtlas.getTexture());
-			uniformMatrix(0, model);
-			uniformMatrix(1, loadProjectionMatrix());
+			basicShaderProgram.uniformMatrix(basicShaderProgram.getUniformLocation("model"), model);
+			basicShaderProgram.uniformMatrix(basicShaderProgram.getUniformLocation("projection"), loadProjectionMatrix());
 			bindQuad();
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			
@@ -226,30 +228,25 @@ public class Renderer {
 	}
 	
 	public static void bindQuad() {
-
+		ShaderProgram activeShader = ShaderProgram.getActiveShader();
+		int positionLocation = activeShader.getAttribLocation("position");
+		int uvLocation = activeShader.getAttribLocation("v_uv");
 		glBindVertexArray(quadVAO);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, false, 2*Float.BYTES, 0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, false, 2*Float.BYTES, 12*Float.BYTES);
+		glEnableVertexAttribArray(positionLocation);
+		glVertexAttribPointer(positionLocation, 2, GL_FLOAT, false, 2*Float.BYTES, 0);
+		glEnableVertexAttribArray(uvLocation);
+		glVertexAttribPointer(uvLocation, 2, GL_FLOAT, false, 2*Float.BYTES, 12*Float.BYTES);
 	}
 	
 	public static int getQuadVAO() {
 		return Renderer.quadVAO;
 	}
 	
-	public static void uniformMatrix(int location, Matrix4f mat) {
-		FloatBuffer buffer = memAllocFloat(16);
-		mat.get(buffer);
-		glUniformMatrix4fv(location, false, buffer);
-		memFree(buffer);
-	}
-	
-	public static int getBasicShader() {
+	public static ShaderProgram getBasicShader() {
 		return basicShaderProgram;
 	}
 	
-	public static int getTextShader() {
+	public static ShaderProgram getTextShader() {
 		return textShaderProgram;
 	}
 	
