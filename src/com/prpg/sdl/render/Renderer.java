@@ -200,13 +200,14 @@ public class Renderer {
 				screen.draw();
 			}
 			
-			basicShaderProgram.use();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, TextAtlas.getTexture());
-			basicShaderProgram.uniformMatrix(basicShaderProgram.getUniformLocation("model"), model);
-			basicShaderProgram.uniformMatrix(basicShaderProgram.getUniformLocation("projection"), loadProjectionMatrix());
-			bindQuad();
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			//TEST RENDER STUFF
+//			basicShaderProgram.use();
+//			glActiveTexture(GL_TEXTURE0);
+//			glBindTexture(GL_TEXTURE_2D, TextAtlas.getTexture());
+//			basicShaderProgram.uniformMatrix(basicShaderProgram.getUniformLocation("model"), model);
+//			basicShaderProgram.uniformMatrix(basicShaderProgram.getUniformLocation("projection"), loadProjectionMatrix());
+//			bindQuad();
+//			glDrawArrays(GL_TRIANGLES, 0, 6);
 			
 			//STOP RENDER
 			
@@ -248,6 +249,10 @@ public class Renderer {
 	
 	public static ShaderProgram getTextShader() {
 		return textShaderProgram;
+	}
+	
+	public static ShaderProgram getScaleShader() {
+		return scaleShaderProgram;
 	}
 	
 }

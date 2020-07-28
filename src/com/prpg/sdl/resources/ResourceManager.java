@@ -8,6 +8,7 @@ import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glDeleteTextures;
 import static org.lwjgl.opengl.GL11.glGenTextures;
 import static org.lwjgl.opengl.GL11.glTexImage2D;
 import static org.lwjgl.opengl.GL11.glTexParameteri;
@@ -21,7 +22,9 @@ import static org.lwjgl.opengl.GL20.glDeleteProgram;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
@@ -33,6 +36,7 @@ public class ResourceManager {
 	public static final String CURRENT_WORKING_DIRECTORY = System.getProperty("user.dir");
 	
 	private static final List<Integer> shaderPrograms = new ArrayList<Integer>();
+	private static final HashMap<String, Integer> textures = new HashMap<String, Integer>();
 	
 	public static int createVBO(float[] data) {
 		MemoryStack stack = MemoryStack.stackPush();
@@ -66,7 +70,15 @@ public class ResourceManager {
 		
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x[0], y[0], 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
 		
+		textures.put(fileName, tex);
 		return tex;
+	}
+	
+	public static int getTexture(String fileName) {
+		if (!textures.containsKey(fileName)) {
+			loadTexture(fileName);
+		}
+		return textures.get(fileName);
 	}
 	
 	
@@ -93,6 +105,22 @@ public class ResourceManager {
 		}
 	}
 	
+	
+	/**
+	 * Must use filename if deleting textures
+	 * @param fileName The name of the file which the texture was loaded from
+	 */
+	public static void deleteTexture(String fileName) {
+		glDeleteTextures(textures.get(fileName));
+		textures.remove(fileName);
+	}
+	
+	public static void cleanTextures() {
+		for (Entry<String, Integer> entry : textures.entrySet()) {
+			glDeleteTextures(entry.getValue());
+		}
+		textures.clear();
+	}
 	
 
 }
