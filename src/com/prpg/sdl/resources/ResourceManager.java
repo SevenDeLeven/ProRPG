@@ -1,23 +1,6 @@
 package com.prpg.sdl.resources;
 
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.GL_RGBA8;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glDeleteTextures;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
-import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
-import static org.lwjgl.opengl.GL15.glBufferData;
-import static org.lwjgl.opengl.GL15.glGenBuffers;
-import static org.lwjgl.opengl.GL20.glDeleteProgram;
+import static org.lwjgl.opengl.GL20.*;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -55,8 +38,8 @@ public class ResourceManager {
 		return vbo;
 	}
 	
-	public static int loadTexture(String fileName) {
-		fileName = CURRENT_WORKING_DIRECTORY+"/assets/textures/"+fileName;
+	public static int loadTexture(String fName, int wrap_s, int wrap_t) {
+		String fileName = CURRENT_WORKING_DIRECTORY+"/assets/textures/"+fName;
 		int tex = glGenTextures();
 		glBindTexture(GL_TEXTURE_2D, tex);
 		int[] x = new int[1];
@@ -65,13 +48,22 @@ public class ResourceManager {
 		
 		STBImage.stbi_set_flip_vertically_on_load(true);
 		ByteBuffer img = STBImage.stbi_load(fileName, x, y, comp, 4);
+		if (img == null) {
+			throw new NullPointerException("Image does not exist or there was an error loading the texture " + fileName);
+		}
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
 		
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x[0], y[0], 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
 		
-		textures.put(fileName, tex);
+		textures.put(fName, tex);
 		return tex;
+	}
+	
+	public static int loadTexture(String fName) {
+		return loadTexture(fName, GL_REPEAT, GL_REPEAT);
 	}
 	
 	public static int getTexture(String fileName) {

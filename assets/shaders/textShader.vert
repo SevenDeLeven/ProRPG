@@ -3,6 +3,7 @@
 uniform ivec4 xywh;
 uniform mat4 model;
 uniform mat4 projection;
+uniform float test;
 
 in vec2 position;
 in vec2 v_uv;

@@ -1,49 +1,7 @@
 package com.prpg.sdl.render;
 
-import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
-import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE;
-import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
-import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
-import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
-import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
-import static org.lwjgl.glfw.GLFW.glfwGetWindowSize;
-import static org.lwjgl.glfw.GLFW.glfwInit;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
-import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
-import static org.lwjgl.glfw.GLFW.glfwTerminate;
-import static org.lwjgl.glfw.GLFW.glfwWindowHint;
-import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
-import static org.lwjgl.opengl.GL11.GL_BLEND;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_FLOAT;
-import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
-import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glBlendFunc;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glDrawArrays;
-import static org.lwjgl.opengl.GL11.glEnable;
-import static org.lwjgl.opengl.GL11.glViewport;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
-import static org.lwjgl.opengl.GL15.glDeleteBuffers;
-import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glGetUniformLocation;
-import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
-import static org.lwjgl.opengl.GL20.glUseProgram;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
-import static org.lwjgl.opengl.GL30.glDeleteVertexArrays;
-import static org.lwjgl.opengl.GL30.glGenVertexArrays;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memAllocFloat;
 import static org.lwjgl.system.MemoryUtil.memFree;
@@ -55,14 +13,19 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.joml.Matrix4f;
+import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWErrorCallbackI;
+import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
 import com.prpg.sdl.gui.MenuScreen;
 import com.prpg.sdl.gui.Screen;
 import com.prpg.sdl.gui.TextAtlas;
+import com.prpg.sdl.input.Keyboard;
+import com.prpg.sdl.input.Mouse;
 import com.prpg.sdl.resources.ResourceManager;
 
 public class Renderer {
@@ -71,6 +34,9 @@ public class Renderer {
 	
 	static int quadVAO;
 	static int quadVBO;
+	
+	static float windowWidth;
+	static float windowHeight;
 	
 	private static ShaderProgram basicShaderProgram;
 	private static ShaderProgram textShaderProgram;
@@ -90,6 +56,8 @@ public class Renderer {
 	
 	public static void create() {
 		
+		//Window and context setup
+		
 		glfwSetErrorCallback(new GLFWErrorCallbackI() {
 
 			@Override
@@ -107,8 +75,36 @@ public class Renderer {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		windowWidth = 640;
+		windowHeight = 480;
 		glfwWindow = glfwCreateWindow(640, 480, "name", NULL, NULL);
 		glfwMakeContextCurrent(glfwWindow);
+		Mouse.init(glfwWindow);
+		
+		glfwSetCursorPosCallback(glfwWindow, new GLFWCursorPosCallback()  {
+			@Override
+			public void invoke(long window, double x, double y) {
+				Mouse.mouseX = (int)x;
+				Mouse.mouseY = (int)y;
+			}
+		});
+		
+		glfwSetWindowSizeCallback(glfwWindow, new GLFWWindowSizeCallback() {
+			public void invoke(long window, int width, int height) {
+				glViewport(0,0,width,height);
+				Mouse.update(width, height);
+				Renderer.windowWidth = width;
+				Renderer.windowHeight = height;
+			}
+		});
+		
+		glfwSetKeyCallback(glfwWindow, new GLFWKeyCallback() {
+			@Override
+			public void invoke(long window, int key, int scancode, int action, int mods) {
+				if (action == GLFW_PRESS)
+					Keyboard.keyPress(key, mods);
+			}
+		});
 		
 		try ( MemoryStack stack = MemoryStack.stackPush() ) {
 			IntBuffer pWidth = stack.mallocInt(1); // int*
@@ -129,9 +125,11 @@ public class Renderer {
 			
 		}
 		
+		Mouse.update((int)windowWidth, (int)windowHeight);
+		
 		GL.createCapabilities();
 
-		glViewport(0,0,640,480);
+		glViewport(0,0,(int)windowWidth,(int)windowHeight);
 		
 		//Text Loading
 		
@@ -143,6 +141,7 @@ public class Renderer {
 		textShaderProgram = ShaderProgram.createShaderProgram("textShader.vert", "textShader.frag");
 		scaleShaderProgram = ShaderProgram.createShaderProgram("scaleShader.vert", "scaleShader.frag");
 		
+		//Creation of the basic quad VAO
 		
 		quadVAO = glGenVertexArrays();
 		glBindVertexArray(quadVAO);
@@ -167,6 +166,19 @@ public class Renderer {
 		
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		
+		//Load textures
+		ResourceManager.loadTexture("textAtlas.png");
+		ResourceManager.loadTexture("buttonTL.png", GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+		ResourceManager.loadTexture("buttonT.png", GL_REPEAT, GL_CLAMP_TO_EDGE);
+		ResourceManager.loadTexture("buttonTR.png", GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+		ResourceManager.loadTexture("buttonL.png", GL_CLAMP_TO_EDGE, GL_REPEAT);
+		ResourceManager.loadTexture("buttonC.png", GL_REPEAT, GL_REPEAT);
+		ResourceManager.loadTexture("buttonR.png", GL_CLAMP_TO_EDGE, GL_REPEAT);
+		ResourceManager.loadTexture("buttonBL.png", GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+		ResourceManager.loadTexture("buttonB.png", GL_REPEAT, GL_CLAMP_TO_EDGE);
+		ResourceManager.loadTexture("buttonBR.png", GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 		
 		screens.add(new MenuScreen());
 		
@@ -224,7 +236,7 @@ public class Renderer {
 	
 	public static Matrix4f loadProjectionMatrix() {
 		Matrix4f projection = new Matrix4f();
-		projection.scale(1f/640f,1f/480f,1);
+		projection.scale(2f/((float)windowWidth),2f/((float)windowHeight),1);
 		return projection;
 	}
 	
@@ -239,8 +251,21 @@ public class Renderer {
 		glVertexAttribPointer(uvLocation, 2, GL_FLOAT, false, 2*Float.BYTES, 12*Float.BYTES);
 	}
 	
+	public static void bindTexture(int location, int texture) {
+		glActiveTexture(location);
+		glBindTexture(GL_TEXTURE_2D, texture);
+	}
+	
 	public static int getQuadVAO() {
 		return Renderer.quadVAO;
+	}
+	
+	public static int getWindowWidth() {
+		return (int) windowWidth;
+	}
+	
+	public static int getWindowHeight() {
+		return (int) windowHeight;
 	}
 	
 	public static ShaderProgram getBasicShader() {
